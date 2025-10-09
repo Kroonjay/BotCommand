@@ -104,7 +104,7 @@ class Simulation:
                 raise ValueError(f"Server didn't start after {attempts} attempts")
             if not self.is_running():
                 raise ValueError(
-                    f"Simulation process terminated: {self.process.returncode}"
+                    f"Simulation process terminated: {self.process.returncode} - Output: {self.process.stdout} - Err: {self.process.stderr}"
                 )
         logger.info(
             f"Server successfully started up on port {self.remote_env_port} after waiting {time.time() - start_time} seconds"

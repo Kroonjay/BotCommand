@@ -516,7 +516,7 @@ class PPO:
     ) -> "PPO":
         if not os.path.exists(load_path):
             raise ValueError(f"{load_path} not found")
-        checkpoint = th.load(load_path, map_location=device)
+        checkpoint = th.load(load_path, map_location=device, weights_only=False)
         # Ensure the loaded model is actually trainable, if requested
         if trainable is None:
             trainable = "optimizer" in checkpoint
@@ -545,21 +545,21 @@ class PPO:
         # Optimized version of load, to just load the model meta
         if not os.path.exists(load_path):
             raise ValueError(f"{load_path} not found")
-        checkpoint = th.load(load_path, map_location="cpu")
+        checkpoint = th.load(load_path, map_location="cpu", weights_only=False)
         return cast(Meta, checkpoint["meta"])
 
     @staticmethod
     def save_meta(save_path: str, meta: Meta) -> None:
         if not os.path.exists(save_path):
             raise ValueError(f"{save_path} not found")
-        checkpoint = th.load(save_path, map_location="cpu")
+        checkpoint = th.load(save_path, map_location="cpu", weights_only=False)
         checkpoint["meta"] = meta
         th.save(checkpoint, save_path)
 
     @staticmethod
     def optimize_for_inference(model_path: str) -> None:
         # Optimize the model for deployment by removing unnecessary information (ex. optimizer state)
-        checkpoint = th.load(model_path, map_location="cpu")
+        checkpoint = th.load(model_path, map_location="cpu", weights_only=False)
         checkpoint.pop("optimizer", None)
         for extension in checkpoint.get("extensions", []):
             extension["type"].optimize_for_inference(extension["params"])
