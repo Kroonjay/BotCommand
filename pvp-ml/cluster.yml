@@ -41,13 +41,13 @@ setup_commands:
   - which git || sudo yum install -y git
 
   - echo 'Cloning repository'
-  - sh -c '[ -d ~/osrs-pvp-reinforcement-learning ] && cd ~/osrs-pvp-reinforcement-learning && git pull || git clone https://github.com/Naton1/osrs-pvp-reinforcement-learning.git ~/osrs-pvp-reinforcement-learning'
+  - sh -c '[ -d ~/BotCommand ] && cd ~/BotCommand && git pull || git clone https://github.com/Naton1/BotCommand.git ~/BotCommand'
 
   - echo 'Installing Mamba'
   - sh -c '[ -d ~/mambaforge ] || (wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh -O ~/mambaforge.sh && bash ~/mambaforge.sh -b -p $HOME/mambaforge)'
 
   - echo 'Creating Mamba environment'
-  - bash -c 'source ~/mambaforge/bin/activate && cd ~/osrs-pvp-reinforcement-learning/pvp-ml && if [[ $(mamba env list | grep -c "$(pwd)/env") -eq 0 ]]; then mamba env create -p ./env -f environment.yml; fi'
+  - bash -c 'source ~/mambaforge/bin/activate && cd ~/BotCommand/pvp-ml && if [[ $(mamba env list | grep -c "$(pwd)/env") -eq 0 ]]; then mamba env create -p ./env -f environment.yml; fi'
 
   - echo 'Adding Conda environment to bashrc for Ray to use'
-  - echo 'source ~/mambaforge/bin/activate && conda activate ~/osrs-pvp-reinforcement-learning/pvp-ml/env' >> ~/.bashrc
+  - echo 'source ~/mambaforge/bin/activate && conda activate ~/BotCommand/pvp-ml/env' >> ~/.bashrc

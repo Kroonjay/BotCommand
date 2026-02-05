@@ -149,9 +149,9 @@ class _RolloutActor:
         env_exp_dir = os.getenv("REPO_DIR")
         if env_exp_dir and os.path.exists(env_exp_dir):
             return env_exp_dir
-        # We expect that this repo is cloned at <user-home>/osrs-pvp-reinforcement-learning
+        # We expect that this repo is cloned at <user-home>/BotCommand
         # and that the Ray job is running in the conda env already.
-        expected_repo_dir = f"{str(Path.home())}/osrs-pvp-reinforcement-learning"
+        expected_repo_dir = f"{str(Path.home())}/BotCommand"
         if os.path.exists(expected_repo_dir):
             return expected_repo_dir
         raise ValueError("Unable to determine repo directory for rollout")
