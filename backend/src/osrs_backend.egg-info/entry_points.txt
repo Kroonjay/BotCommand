@@ -1,0 +1,2 @@
+[console_scripts]
+osrs = osrs_backend.cli:main

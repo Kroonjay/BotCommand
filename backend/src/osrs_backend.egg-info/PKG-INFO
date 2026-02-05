@@ -1,0 +1,23 @@
+Metadata-Version: 2.4
+Name: osrs-backend
+Version: 1.0.0
+Summary: Unified OSRS backend - HTTP API and ML inference server
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.121.0
+Requires-Dist: uvicorn>=0.38.0
+Requires-Dist: prisma>=0.15.0
+Requires-Dist: arq>=0.26.3
+Requires-Dist: redis[hiredis]>=5.3.1
+Requires-Dist: torch>=2.1.0
+Requires-Dist: numpy>=1.26.0
+Requires-Dist: aiohttp>=3.9.0
+Requires-Dist: httpx>=0.28.0
+Requires-Dist: pydantic>=2.12.0
+Requires-Dist: pydantic-settings>=2.0.0
+Requires-Dist: click>=8.3.0
+Requires-Dist: python-dotenv>=1.2.0
+Requires-Dist: osrs>=0.0.15
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"

@@ -1,0 +1,122 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    shm_size: 128mb
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-osrs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-osrs_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-osrs_backend}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-osrs}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for ARQ task queue
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Database migrations (run once on startup)
+  migrate:
+    build:
+      context: .
+      target: base
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_PRISMA_URL: postgresql://${POSTGRES_USER:-osrs}:${POSTGRES_PASSWORD:-osrs_dev_password}@db:5432/${POSTGRES_DB:-osrs_backend}
+    command: prisma db push --skip-generate
+    restart: "no"
+
+  # Main API server (HTTP + TCP)
+  server:
+    build:
+      context: .
+      target: server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+      - "${TCP_PORT:-9999}:9999"
+    environment:
+      # Database
+      POSTGRES_PRISMA_URL: postgresql://${POSTGRES_USER:-osrs}:${POSTGRES_PASSWORD:-osrs_dev_password}@db:5432/${POSTGRES_DB:-osrs_backend}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Server
+      HTTP_HOST: 0.0.0.0
+      HTTP_PORT: 8080
+      TCP_HOST: 0.0.0.0
+      TCP_PORT: 9999
+      # ML Settings
+      ML_DEVICE: ${ML_DEVICE:-cpu}
+      ML_PROCESSOR_POOL_SIZE: ${ML_PROCESSOR_POOL_SIZE:-1}
+      ML_PROCESSOR_TYPE: ${ML_PROCESSOR_TYPE:-thread}
+      MODELS_DIR: ${MODELS_DIR:-/app/models}
+      # Wiki API
+      WIKI_API_BASE_URL: ${WIKI_API_BASE_URL:-https://prices.runescape.wiki/api/v1/osrs}
+      WIKI_API_USER_AGENT: ${WIKI_API_USER_AGENT:-osrs-backend/1.0}
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      # Mount models directory if you want to use local models
+      - ${MODELS_DIR:-./models}:/app/models:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+
+  # ARQ Background Worker
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      # Database
+      POSTGRES_PRISMA_URL: postgresql://${POSTGRES_USER:-osrs}:${POSTGRES_PASSWORD:-osrs_dev_password}@db:5432/${POSTGRES_DB:-osrs_backend}
+      # Redis
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      # Wiki API
+      WIKI_API_BASE_URL: ${WIKI_API_BASE_URL:-https://prices.runescape.wiki/api/v1/osrs}
+      WIKI_API_USER_AGENT: ${WIKI_API_USER_AGENT:-osrs-backend/1.0}
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+volumes:
+  postgres_data:
+  redis_data:

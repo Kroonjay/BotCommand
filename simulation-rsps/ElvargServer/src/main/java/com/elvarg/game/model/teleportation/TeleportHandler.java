@@ -26,45 +26,46 @@ public class TeleportHandler {
 	 */
 	public static void teleport(Player player, Location targetLocation, TeleportType teleportType,
 			boolean wildernessWarning) {
-		if (wildernessWarning) {
-			StringBuilder warning = new StringBuilder();
-			Area area = AreaManager.get(targetLocation);
-			boolean wilderness = (area instanceof WildernessArea);
-			int wildernessLevel = WildernessArea.getLevel(targetLocation.getY());
-			if (wilderness) {
-				warning.append("Are you sure you want to teleport there? ");
-				if (wildernessLevel > 0) {
-					warning.append("It's in level @red@" + wildernessLevel + "@bla@ wilderness! ");
-					if (WildernessArea.multi(targetLocation.getX(), targetLocation.getY())) {
-						warning.append(
-								"Additionally, @red@it's a multi zone@bla@. Other players may attack you simultaneously.");
-					} else {
-						warning.append("Other players will be able to attack you.");
-					}
-				} else {
-					warning.append("Other players will be able to attack you.");
-				}
-				/*player.setDialogueContinueAction(new Action() {
-					@Override
-					public void execute() {
-
-						//DialogueManager.start(player, 7);
-						player.setDialogueOptions(new DialogueOptions() {
-							@Override
-							public void handleOption(Player player, int option) {
-								player.getPacketSender().sendInterfaceRemoval();
-								if (option == 1) {
-									teleport(player, targetLocation, teleportType, false);
-								}
-							}
-						});
-					}
-
-				});
-				//DialogueManager.sendStatement(player, warning.toString());*/
-				return;
-			}
-		}
+		// Wilderness warning disabled - dialogue system not implemented
+		// if (wildernessWarning) {
+		// 	StringBuilder warning = new StringBuilder();
+		// 	Area area = AreaManager.get(targetLocation);
+		// 	boolean wilderness = (area instanceof WildernessArea);
+		// 	int wildernessLevel = WildernessArea.getLevel(targetLocation.getY());
+		// 	if (wilderness) {
+		// 		warning.append("Are you sure you want to teleport there? ");
+		// 		if (wildernessLevel > 0) {
+		// 			warning.append("It's in level @red@" + wildernessLevel + "@bla@ wilderness! ");
+		// 			if (WildernessArea.multi(targetLocation.getX(), targetLocation.getY())) {
+		// 				warning.append(
+		// 						"Additionally, @red@it's a multi zone@bla@. Other players may attack you simultaneously.");
+		// 			} else {
+		// 				warning.append("Other players will be able to attack you.");
+		// 			}
+		// 		} else {
+		// 			warning.append("Other players will be able to attack you.");
+		// 		}
+		// 		/*player.setDialogueContinueAction(new Action() {
+		// 			@Override
+		// 			public void execute() {
+		//
+		// 				//DialogueManager.start(player, 7);
+		// 				player.setDialogueOptions(new DialogueOptions() {
+		// 					@Override
+		// 					public void handleOption(Player player, int option) {
+		// 						player.getPacketSender().sendInterfaceRemoval();
+		// 						if (option == 1) {
+		// 							teleport(player, targetLocation, teleportType, false);
+		// 						}
+		// 					}
+		// 				});
+		// 			}
+		//
+		// 		});
+		// 		//DialogueManager.sendStatement(player, warning.toString());*/
+		// 		return;
+		// 	}
+		// }
 		player.getMovementQueue().setBlockMovement(true).reset();
 		onTeleporting(player);
 		player.performAnimation(teleportType.getStartAnimation());

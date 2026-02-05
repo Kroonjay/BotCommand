@@ -1,0 +1,206 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+}
+
+generator client {
+  provider  = "prisma-client-py"
+  interface = "asyncio"
+}
+
+enum PriceTrend {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+enum PriceWindow {
+  FIVE_MINUTES
+  ONE_HOUR
+  ONE_DAY
+}
+
+enum ItemType {
+  GEAR
+  WEAPON
+  CONSUMABLE
+  MATERIAL
+  UNTRADABLE
+  UNKNOWN
+  DEPRECATED
+}
+
+enum RequirementType {
+  SKILL
+  ITEM
+  QUEST
+}
+
+enum Skill {
+  ATTACK
+  STRENGTH
+  DEFENCE
+  RANGED
+  PRAYER
+  MAGIC
+  RUNECRAFT
+  CONSTRUCTION
+  HITPOINTS
+  AGILITY
+  HERBLORE
+  THIEVING
+  CRAFTING
+  FLETCHING
+  SLAYER
+  MINING
+  SMITHING
+  FISHING
+  COOKING
+  FIREMAKING
+  WOODCUTTING
+  FARMING
+  HUNTER
+}
+
+model Item {
+  id                  Int                 @id @default(autoincrement())
+  source_id           Int                 @unique
+  name                String
+  is_members          Boolean             @default(false)
+  low_alch_price      Int
+  high_alch_price     Int
+  ge_buy_limit        Int
+  examine_text        String
+  item_type           ItemType            @default(UNKNOWN)
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
+  action_inputs       ActionInput[]       @relation("ActionInputs")
+  action_requirements ActionRequirement[] @relation("ActionRequirements")
+  action_outputs      ActionOutput[]      @relation("ActionOutputs")
+
+  price        ItemPrice[]       @relation("ItemPrices")
+  price_window ItemPriceWindow[] @relation("ItemPriceWindows")
+  metrics      Metrics[]         @relation("Metrics")
+
+}
+
+model ItemPrice {
+  id             BigInt @id @default(autoincrement())
+  item           Item   @relation("ItemPrices", fields: [item_source_id], references: [source_id])
+  item_source_id Int
+
+  high_price     Int // raw epoch seconds from API
+  high_timestamp DateTime // derived from highTimeEp
+
+  low_price     Int // raw epoch seconds from API
+  low_timestamp DateTime // derived from lowTimeEp
+
+  average_price     Int
+  average_timestamp DateTime
+  created_at        DateTime @default(now()) // when *you* pulled /latest
+
+  @@index([item_source_id, created_at])
+  @@index([item_source_id, high_timestamp])
+  @@index([item_source_id, low_timestamp])
+}
+
+model ItemPriceWindow {
+  id              BigInt      @id @default(autoincrement())
+  item            Item        @relation("ItemPriceWindows", fields: [item_source_id], references: [source_id])
+  item_source_id  Int
+  window          PriceWindow // '5m' | '1h' | '24h'
+  start_timestamp DateTime // bucket start (UTC)
+
+  average_high_price Int?
+  average_low_price  Int?
+  high_price_volume  Int? // trades counted at/near "high"
+  low_price_volume   Int? // trades counted at/near "low"
+
+  // Some implementations also expose a simple combined volume—include if you compute it.
+  total_volume Int?
+
+  created_at DateTime @default(now())
+
+  @@unique(name: "item_source_id_window_start_timestamp", fields: [item_source_id, window, start_timestamp])
+}
+
+model Action {
+  id           Int                 @id @default(autoincrement())
+  name         String              @unique
+  action_type  String
+  cost         Float @default(0)
+  cost_per_hour Float @default(0)
+  experience   Int
+  actions_per_hour Int @default(1)
+  experience_per_hour Int @default(0)
+  created_at   DateTime            @default(now())
+  updated_at   DateTime            @updatedAt
+  inputs       ActionInput[]       @relation("ActionInputs")
+  requirements ActionRequirement[]
+  outputs      ActionOutput[]
+}
+
+model ActionInput {
+  id             Int      @id @default(autoincrement())
+  action_id      Int
+  item_source_id Int
+  quantity       Int
+  created_at     DateTime @default(now())
+  action         Action   @relation("ActionInputs", fields: [action_id], references: [id])
+  item           Item     @relation("ActionInputs", fields: [item_source_id], references: [source_id])
+}
+
+model ActionRequirement {
+  id               Int             @id @default(autoincrement())
+  action_id        Int
+  requirement_type RequirementType
+
+  // Skill requirement fields (nullable)
+  skill       Skill?
+  skill_level Int?
+
+  // Item requirement fields (nullable)
+  item_source_id Int?
+  item_quantity  Int?
+
+  // Quest requirement fields (nullable)
+  quest_name      String?
+  quest_completed Boolean? @default(true)
+
+  // Order/position of requirement (for display purposes)
+  order      Int      @default(0)
+  created_at DateTime @default(now())
+
+  action Action @relation(fields: [action_id], references: [id], onDelete: Cascade)
+
+  // Foreign key to Item if it's an item requirement
+  item Item? @relation("ActionRequirements", fields: [item_source_id], references: [source_id])
+}
+
+model ActionOutput {
+  id             Int      @id @default(autoincrement())
+  action_id      Int
+  item_source_id Int
+  quantity       Int
+  created_at     DateTime @default(now())
+  action         Action   @relation(fields: [action_id], references: [id])
+  item           Item     @relation("ActionOutputs", fields: [item_source_id], references: [source_id])
+}
+
+model Metrics {
+  id               BigInt   @id @default(autoincrement())
+  item_source_id   Int
+  window           PriceWindow
+  start_timestamp  DateTime  // when this metric snapshot was calculated
+  spread           Float
+  volatility       Float
+  zscore           Float
+  latest_price     Float
+  created_at       DateTime  @default(now())
+
+  // Relation (optional, if you want to link to Item)
+  Item Item? @relation("Metrics",fields: [item_source_id], references: [source_id])
+
+  @@unique(name: "item_source_id_window_start_timestamp", fields: [item_source_id, window, start_timestamp])
+  @@index([item_source_id, window, start_timestamp])
+}

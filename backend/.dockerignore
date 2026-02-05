@@ -1,0 +1,56 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv
+venv
+ENV
+env
+.eggs
+*.egg-info
+*.egg
+dist
+build
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+.pytest_cache
+.coverage
+htmlcov
+.tox
+.nox
+
+# Pipenv
+Pipfile.lock
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.docker
+
+# Misc
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# Don't ignore these (needed for build)
+!pyproject.toml
+!prisma/
+!src/
